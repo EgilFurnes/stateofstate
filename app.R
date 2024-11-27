@@ -1,27 +1,32 @@
+
+# Clear the workspace
+# rm(list = ls())
+
 # Load required libraries
 library(tidyverse)
 library(shiny)
+library(readr)
 
 # Fetch and process data
 url_csv <- "https://data.ssb.no/api/v0/dataset/1082.csv?lang=no"
 
-population <- read.csv2(url_csv, stringsAsFactors = FALSE, fileEncoding = "latin1") 
+# Read data into 'pop' data frame
+pop <- read_delim(
+  url_csv,
+  delim = ";",
+  locale = locale(encoding = "ISO-8859-1"), # Handles Norwegian characters
+  trim_ws = TRUE
+) %>% as_tibble()
 
-colnames(population) <- colnames(population) %>%
-  iconv(from = "latin1", to = "ASCII//TRANSLIT") %>% # Attempt transliteration
-  gsub("[^[:alnum:]_.]+", "_", .) # Replace non-alphanumeric characters with "_"
+# Rename columns
+colnames(pop) <- c("region", "gender", "age", "year", "statisticalVariable", "population")
 
-population <- population %>%
-  rename(
-    region = region,
-    gender = kjA.nn,
-    age = alder,
-    year = A.r,
-    statisticVariable = statistikkvariabel,
-    population = X07459..Befolkning..etter.region..kjA.nn..alder..A.r.og.statistikkvariabel
-  ) %>%
+# Verify column names
+print(colnames(pop))
+
+# Convert data types if necessary
+pop <- pop %>%
   mutate(
-    age = as.character(age),
     year = as.numeric(year),
     population = as.numeric(population)
   )
@@ -32,16 +37,16 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       selectInput("region_filter", "Select Region:",
-                  choices = unique(population$region),
+                  choices = unique(pop$region),
                   selected = "0 Hele landet"),
       checkboxGroupInput("gender_filter", "Select Gender:",
-                         choices = unique(population$gender),
+                         choices = unique(pop$gender),
                          selected = c("1 Menn", "2 Kvinner")),
       sliderInput("year_range", "Select Year Range:",
-                  min = min(population$year), max = max(population$year),
-                  value = c(min(population$year), max(population$year))),
+                  min = min(pop$year), max = max(pop$year),
+                  value = c(min(pop$year), max(pop$year))),
       selectInput("age_filter", "Select Age Group:",
-                  choices = c("All Ages", unique(population$age)),
+                  choices = c("All Ages", unique(pop$age)),
                   selected = "All Ages")
     ),
     mainPanel(
@@ -54,7 +59,7 @@ ui <- fluidPage(
 # Define Server Logic
 server <- function(input, output) {
   filtered_data <- reactive({
-    data <- population %>%
+    data <- pop %>%
       filter(
         region == input$region_filter,
         gender %in% input$gender_filter,
@@ -89,5 +94,3 @@ server <- function(input, output) {
 
 # Run the app
 shinyApp(ui = ui, server = server)
-
-
