@@ -4,14 +4,21 @@ library(shiny)
 
 # Fetch and process data
 url_csv <- "https://data.ssb.no/api/v0/dataset/1082.csv?lang=no"
-population <- read.csv2(url_csv, stringsAsFactors = FALSE) %>%
+
+population <- read.csv2(url_csv, stringsAsFactors = FALSE, fileEncoding = "latin1") 
+
+colnames(population) <- colnames(population) %>%
+  iconv(from = "latin1", to = "ASCII//TRANSLIT") %>% # Attempt transliteration
+  gsub("[^[:alnum:]_.]+", "_", .) # Replace non-alphanumeric characters with "_"
+
+population <- population %>%
   rename(
     region = region,
-    gender = kj.nn,
+    gender = kjA.nn,
     age = alder,
-    year = X.r,
+    year = A.r,
     statisticVariable = statistikkvariabel,
-    population = X07459..Befolkning..etter.region..kj.nn..alder...r.og.statistikkvariabel
+    population = X07459..Befolkning..etter.region..kjA.nn..alder..A.r.og.statistikkvariabel
   ) %>%
   mutate(
     age = as.character(age),
@@ -82,3 +89,5 @@ server <- function(input, output) {
 
 # Run the app
 shinyApp(ui = ui, server = server)
+
+

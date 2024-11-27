@@ -1,0 +1,10 @@
+name: stateofstate
+title:
+username: egil
+account: egil
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 13467342
+bundleId: 9427221
+url: https://egil.shinyapps.io/stateofstate/
+version: 1
